@@ -1,12 +1,13 @@
 package com.eaglesakura.android.service;
 
+import com.eaglesakura.android.service.aidl.ICommandClientCallback;
+import com.eaglesakura.android.service.aidl.ICommandServerService;
+import com.eaglesakura.android.service.data.Payload;
+import com.eaglesakura.android.thread.ui.UIHandler;
+
 import android.app.Service;
 import android.os.IBinder;
 import android.os.RemoteException;
-
-import com.eaglesakura.android.service.aidl.ICommandClientCallback;
-import com.eaglesakura.android.service.aidl.ICommandServerService;
-import com.eaglesakura.android.thread.ui.UIHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,8 +22,6 @@ public class CommandServer {
 
     private Map<String, ServiceClient> clients = new HashMap<>();
 
-    public static final byte[] CLIENT_NOT_FOUND = new byte[0];
-
     public CommandServer(Service service) {
         this.service = service;
         this.impl = new ServerImpl();
@@ -30,8 +29,6 @@ public class CommandServer {
 
     /**
      * Serviceの実体を返す
-     *
-     * @return
      */
     public IBinder getBinder() {
         if (impl instanceof ICommandServerService.Stub) {
@@ -44,9 +41,6 @@ public class CommandServer {
 
     /**
      * 指定したクライアントに接続されていればtrue
-     *
-     * @param id
-     * @return
      */
     public boolean hasClient(String id) {
         synchronized (clients) {
@@ -54,10 +48,11 @@ public class CommandServer {
         }
     }
 
-    class ServerImpl extends ICommandServerService.Stub {
+    private class ServerImpl extends ICommandServerService.Stub {
+
         @Override
-        public byte[] postToServer(String cmd, byte[] buffer) throws RemoteException {
-            return onReceivedDataFromClient(cmd, buffer);
+        public Payload postToServer(String cmd, String clientId, Payload payload) throws RemoteException {
+            return onReceivedDataFromClient(cmd, clientId, payload);
         }
 
         @Override
@@ -103,9 +98,6 @@ public class CommandServer {
 
     /**
      * コールバック登録が行われた
-     *
-     * @param id
-     * @param callback
      */
     protected void onRegisterClient(String id, ICommandClientCallback callback) {
 
@@ -113,34 +105,52 @@ public class CommandServer {
 
     /**
      * コールバックが削除された
-     *
-     * @param id
      */
     protected void onUnregisterClient(String id) {
 
     }
 
-    protected byte[] postToClient(String id, String cmd, byte[] buffer) throws RemoteException {
+    /**
+     * 指定したクライアントへデータを送信する
+     *
+     * @param clientId 送信先クライアントID
+     * @param cmd      送信コマンド
+     * @param buffer   データ
+     */
+    protected Payload postToClient(String clientId, String cmd, byte[] buffer) throws RemoteException {
+        return postToClient(clientId, cmd, new Payload(buffer));
+    }
+
+    /**
+     * 指定したクライアントへデータを送信する
+     */
+    protected Payload postToClient(String clientId, String cmd, Payload payload) throws RemoteException {
         ServiceClient client;
         synchronized (clients) {
-            client = clients.get(id);
+            client = clients.get(clientId);
         }
 
         if (client != null) {
-            return client.callback.postToClient(cmd, buffer);
+            return client.callback.postToClient(cmd, payload);
         } else {
-            return CLIENT_NOT_FOUND;
+            return null;
         }
     }
 
     /**
      * データを送信し、戻り値は無視する
-     *
-     * @param cmd
-     * @param buffer
-     * @throws RemoteException
      */
     protected void broadcastToClientNoResults(String cmd, byte[] buffer) throws RemoteException {
+        broadcastToClientNoResults(cmd, new Payload(buffer));
+    }
+
+    /**
+     * データを送信し、戻り値は無視する
+     *
+     * @param cmd     コマンド
+     * @param payload 送信データ
+     */
+    protected void broadcastToClientNoResults(String cmd, Payload payload) throws RemoteException {
         Map<String, ServiceClient> clients;
 
         synchronized (this.clients) {
@@ -150,20 +160,22 @@ public class CommandServer {
         Iterator<Map.Entry<String, ServiceClient>> iterator = clients.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, ServiceClient> entry = iterator.next();
-            entry.getValue().callback.postToClient(cmd, buffer);
+            entry.getValue().callback.postToClient(cmd, payload);
         }
     }
 
 
     /**
-     * データを送信し、戻り値一覧を取得する
-     *
-     * @param cmd
-     * @param buffer
-     * @return
-     * @throws RemoteException
+     * データを送信し、戻り値はコールバックで受け取る
      */
     protected void broadcastToClient(String cmd, byte[] buffer, ClientResultCallback callback) throws RemoteException {
+        broadcastToClient(cmd, new Payload(buffer), callback);
+    }
+
+    /**
+     * データを送信し、戻り値はコールバックで受け取る
+     */
+    protected void broadcastToClient(String cmd, Payload payload, ClientResultCallback callback) throws RemoteException {
         Map<String, ServiceClient> clients;
 
         synchronized (this.clients) {
@@ -174,45 +186,47 @@ public class CommandServer {
         while (iterator.hasNext()) {
             Map.Entry<String, ServiceClient> entry = iterator.next();
             ServiceClient client = entry.getValue();
-            byte[] clientResult = client.callback.postToClient(cmd, buffer);
+            Payload clientResult = client.callback.postToClient(cmd, payload);
             callback.onClientExecuted(client.id, client.callback, cmd, clientResult);
         }
     }
 
     /**
      * データを送信し、戻り値一覧を取得する
-     *
-     * @param cmd
-     * @param buffer
-     * @return
-     * @throws RemoteException
      */
-    protected Map<String, byte[]> broadcastToClient(String cmd, byte[] buffer) throws RemoteException {
+    protected Map<String, Payload> broadcastToClient(String cmd, byte[] buffer) throws RemoteException {
+        return broadcastToClient(cmd, new Payload(buffer));
+    }
+
+    /**
+     * データを送信し、戻り値一覧を取得する
+     */
+    protected Map<String, Payload> broadcastToClient(String cmd, Payload payload) throws RemoteException {
         Map<String, ServiceClient> clients;
 
         synchronized (this.clients) {
             clients = new HashMap<>(this.clients);
         }
 
-        Map<String, byte[]> results = new HashMap<>();
+        Map<String, Payload> results = new HashMap<>();
         Iterator<Map.Entry<String, ServiceClient>> iterator = clients.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, ServiceClient> entry = iterator.next();
-            results.put(entry.getKey(), entry.getValue().callback.postToClient(cmd, buffer));
+            results.put(entry.getKey(), entry.getValue().callback.postToClient(cmd, payload));
         }
 
         return results;
     }
 
-    protected byte[] onReceivedDataFromClient(String cmd, byte[] buffer) throws RemoteException {
+    protected Payload onReceivedDataFromClient(String cmd, String clientId, Payload payload) throws RemoteException {
         return null;
     }
 
     public interface ClientResultCallback {
-        void onClientExecuted(String id, ICommandClientCallback client, String cmd, byte[] result);
+        void onClientExecuted(String id, ICommandClientCallback client, String cmd, Payload result);
     }
 
-    class ServiceClient {
+    private class ServiceClient {
         final String id;
         final ICommandClientCallback callback;
 

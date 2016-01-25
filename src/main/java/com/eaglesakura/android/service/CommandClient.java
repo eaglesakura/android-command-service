@@ -1,18 +1,19 @@
 package com.eaglesakura.android.service;
 
+import com.eaglesakura.android.service.aidl.ICommandClientCallback;
+import com.eaglesakura.android.service.aidl.ICommandServerService;
+import com.eaglesakura.android.service.data.Payload;
+import com.eaglesakura.android.thread.ui.UIHandler;
+import com.eaglesakura.android.util.AndroidThreadUtil;
+import com.eaglesakura.util.LogUtil;
+import com.eaglesakura.util.StringUtil;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
-
-import com.eaglesakura.android.db.BaseProperties;
-import com.eaglesakura.android.service.aidl.ICommandClientCallback;
-import com.eaglesakura.android.service.aidl.ICommandServerService;
-import com.eaglesakura.android.thread.ui.UIHandler;
-import com.eaglesakura.android.util.AndroidThreadUtil;
-import com.eaglesakura.util.LogUtil;
 
 /**
  * 別プロセスServiceと通信するためのインターフェース
@@ -22,15 +23,11 @@ public abstract class CommandClient {
 
     private ICommandServerService server;
 
-    private String id;
+    private final String id;
 
     public CommandClient(Context context) {
         this.context = context.getApplicationContext();
-        this.id = getClass().getName();
-    }
-
-    public void setId(String id) {
-        this.id = id;
+        this.id = context.getPackageName() + "@" + getClass().getName();
     }
 
     public String getId() {
@@ -38,9 +35,22 @@ public abstract class CommandClient {
     }
 
     /**
+     * クライアントを一意に識別するためのIDを任意に指定して生成する
+     */
+    public CommandClient(Context context, String uid) {
+        if (!StringUtil.isEmpty(uid)) {
+            if (uid.indexOf('@') >= 0) {
+                throw new IllegalArgumentException();
+            }
+        } else {
+            uid = getClass().getName();
+        }
+        this.context = context.getApplicationContext();
+        this.id = context.getPackageName() + "@" + uid;
+    }
+
+    /**
      * Serviceに接続済みであればtrue
-     *
-     * @return
      */
     public boolean isConnected() {
         return server != null;
@@ -90,7 +100,7 @@ public abstract class CommandClient {
                 public void run() {
                     ICommandServerService newServer = ICommandServerService.Stub.asInterface(service);
                     try {
-                        newServer.registerCallback(getId(), callback);
+                        newServer.registerCallback(id, callback);
                     } catch (RemoteException e) {
                         throw new IllegalStateException();
                     }
@@ -118,54 +128,28 @@ public abstract class CommandClient {
 
     private ICommandClientCallback callback = new ICommandClientCallback.Stub() {
         @Override
-        public byte[] postToClient(String cmd, byte[] buffer) throws RemoteException {
-            return onReceivedData(cmd, buffer);
+        public Payload postToClient(String cmd, Payload payload) throws RemoteException {
+            return onReceivedData(cmd, payload);
         }
     };
 
     /**
      * サーバーにデータを送信する
-     *
-     * @param cmd
-     * @param buffer
-     * @return
-     * @throws RemoteException
      */
-    public byte[] requestPostToServer(String cmd, byte[] buffer) throws RemoteException {
+    public Payload requestPostToServer(String cmd, Payload payload) throws RemoteException {
         if (server == null) {
             throw new IllegalStateException("Server not connected");
         }
-
-        return server.postToServer(cmd, buffer);
-    }
-
-    /**
-     * サーバーにデータをPOSTし、戻り値をPropsとして得る
-     *
-     * @param cmd
-     * @param buffer
-     * @param clazz
-     * @param <T>
-     * @return
-     * @throws RemoteException
-     */
-    public <T extends BaseProperties> T postToServerAsProps(String cmd, byte[] buffer, Class<T> clazz) throws RemoteException {
-        byte[] ret = requestPostToServer(cmd, buffer);
-        if (ret != null && ret.length > 0) {
-            return BaseProperties.deserializeInstance(context, clazz, ret);
-        } else {
-            return null;
-        }
+        return server.postToServer(cmd, id, payload);
     }
 
     /**
      * サーバーからのデータ取得時のハンドリングを行う
      *
-     * @param cmd
-     * @param buffer
-     * @return
+     * @param cmd     　処理するコマンド
+     * @param payload 受け取ったデータペイロード
      */
-    protected byte[] onReceivedData(String cmd, byte[] buffer) throws RemoteException {
+    protected Payload onReceivedData(String cmd, Payload payload) throws RemoteException {
         return null;
     }
 

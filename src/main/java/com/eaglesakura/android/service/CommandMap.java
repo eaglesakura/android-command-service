@@ -1,9 +1,9 @@
 package com.eaglesakura.android.service;
 
-import android.annotation.SuppressLint;
-import android.os.RemoteException;
-
+import com.eaglesakura.android.service.data.Payload;
 import com.eaglesakura.util.LogUtil;
+
+import android.os.RemoteException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,8 +18,11 @@ public class CommandMap {
         }
     }
 
-    @SuppressLint("NewApi")
-    public byte[] execute(Object sender, String cmd, byte[] buffer) throws RemoteException {
+    public Payload execute(Object sender, String cmd, byte[] buffer) throws RemoteException {
+        return execute(sender, cmd, new Payload(buffer));
+    }
+
+    public Payload execute(Object sender, String cmd, Payload payload) throws RemoteException {
         Action action;
         synchronized (this) {
             action = actions.get(cmd);
@@ -27,7 +30,7 @@ public class CommandMap {
 
         try {
             if (action != null) {
-                return action.execute(sender, cmd, buffer);
+                return action.execute(sender, cmd, payload);
             } else {
                 return null;
             }
@@ -35,11 +38,11 @@ public class CommandMap {
             throw e;
         } catch (Exception e) {
             LogUtil.log(e);
-            throw new RemoteException(e.getMessage());
+            throw new RemoteException();
         }
     }
 
     public interface Action {
-        byte[] execute(Object sender, String cmd, byte[] buffer) throws Exception;
+        Payload execute(Object sender, String cmd, Payload payload) throws Exception;
     }
 }
