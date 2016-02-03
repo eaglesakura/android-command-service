@@ -35,9 +35,19 @@ android {
     }
 }
 
+// Local or maven
+if (!hasProperty("EGLIBRARY_COMPILE_LOCAL")) {
+    ext.EGLIBRARY_COMPILE_LOCAL = false
+}
+
 dependencies {
-    compile 'com.eaglesakura:android-text-kvs:1.0.+'
-    compile 'com.eaglesakura:android-thread:1.0.+'
+    if (EGLIBRARY_COMPILE_LOCAL) {
+        compile project(':eglibrary:android-text-kvs')
+        compile project(':eglibrary:android-thread')
+    } else {
+        compile 'com.eaglesakura:android-text-kvs:1.0.+'
+        compile 'com.eaglesakura:android-thread:1.0.+'
+    }
 }
 
 apply plugin: 'maven'
