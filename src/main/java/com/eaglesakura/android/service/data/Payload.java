@@ -6,28 +6,29 @@ import com.eaglesakura.util.Util;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * コマンドのやり取りに利用されるペイロード
  */
-public class Payload implements Parcelable {
+public final class Payload implements Parcelable {
 
     /**
      * デフォルトで使用されるバッファ
      */
-    private byte[] buffer = null;
+    private byte[] mBuffer = null;
 
     /**
      * その他の拡張バッファ
      */
-    private List<byte[]> extraBuffers = null;
+    private final Map<String, byte[]> mExtraBuffers = new HashMap<>();
 
     /**
      * その他の互換バッファ
      */
-    private List<ParcelablePayload> extraParcelable = null;
+    private final Map<String, ParcelablePayload> mExtraParcelable = new HashMap<>();
 
     private static final int SERIALIZE_MAIN_BUFFER = 0x01 << 0;
     private static final int SERIALIZE_EXTRA_BUFFER = 0x01 << 1;
@@ -35,13 +36,37 @@ public class Payload implements Parcelable {
 
     public Payload(byte[] buffer) {
         if (buffer != null) {
-            this.buffer = buffer;
+            this.mBuffer = buffer;
         }
     }
 
     public byte[] getBuffer() {
-        return buffer;
+        return mBuffer;
     }
+
+    public Payload put(String key, byte[] buffer) {
+        mExtraBuffers.put(key, buffer);
+        return this;
+    }
+
+    public Payload put(String key, Parcelable data) {
+        mExtraParcelable.put(key, new ParcelablePayload(data));
+        return this;
+    }
+
+    public byte[] getBuffer(String key) {
+        return mExtraBuffers.get(key);
+    }
+
+    public <T extends Parcelable> T getParcerable(String key) {
+        ParcelablePayload payload = mExtraParcelable.get(key);
+        if (payload == null) {
+            return null;
+        } else {
+            return (T) (payload.data);
+        }
+    }
+
 
     @Override
     public int describeContents() {
@@ -50,11 +75,11 @@ public class Payload implements Parcelable {
 
     public <T extends BaseProperties> T deserializePropOrNull(Class<T> clazz) {
         try {
-            if (Util.isEmpty(buffer)) {
+            if (Util.isEmpty(mBuffer)) {
                 return null;
             }
 
-            return BaseProperties.deserializeInstance(null, clazz, buffer);
+            return BaseProperties.deserializeInstance(null, clazz, mBuffer);
         } catch (Exception e) {
         }
         return null;
@@ -74,13 +99,13 @@ public class Payload implements Parcelable {
 
         // シリアライズフラグを指定する
         {
-            if (!Util.isEmpty(buffer)) {
+            if (!Util.isEmpty(mBuffer)) {
                 serializeFlags |= SERIALIZE_MAIN_BUFFER;
             }
-            if (!Util.isEmpty(extraBuffers)) {
+            if (!mExtraBuffers.isEmpty()) {
                 serializeFlags |= SERIALIZE_EXTRA_BUFFER;
             }
-            if (!Util.isEmpty(extraParcelable)) {
+            if (!mExtraParcelable.isEmpty()) {
                 serializeFlags |= SERIALIZE_EXTRA_PARCERCELABLE;
             }
 
@@ -88,20 +113,26 @@ public class Payload implements Parcelable {
         }
 
         if ((serializeFlags & SERIALIZE_MAIN_BUFFER) != 0) {
-            dest.writeByteArray(this.buffer);
+            dest.writeByteArray(this.mBuffer);
         }
 
         if ((serializeFlags & SERIALIZE_EXTRA_BUFFER) != 0) {
-            dest.writeInt(extraBuffers.size());
-            for (byte[] buf : extraBuffers) {
-                dest.writeByteArray(buf);
+            dest.writeInt(mExtraBuffers.size());
+            Iterator<Map.Entry<String, byte[]>> iterator = mExtraBuffers.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, byte[]> entry = iterator.next();
+                dest.writeString(entry.getKey());
+                dest.writeByteArray(entry.getValue());
             }
         }
 
         if ((serializeFlags & SERIALIZE_EXTRA_PARCERCELABLE) != 0) {
-            dest.writeInt(extraParcelable.size());
-            for (ParcelablePayload pp : extraParcelable) {
-                pp.writeToParcel(dest, flags);
+            dest.writeInt(mExtraParcelable.size());
+            Iterator<Map.Entry<String, ParcelablePayload>> iterator = mExtraParcelable.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, ParcelablePayload> entry = iterator.next();
+                dest.writeString(entry.getKey());
+                entry.getValue().writeToParcel(dest, flags);
             }
         }
     }
@@ -110,23 +141,23 @@ public class Payload implements Parcelable {
 
         int serializeFlags = in.readInt();
         if ((serializeFlags & SERIALIZE_MAIN_BUFFER) != 0) {
-            this.buffer = in.createByteArray();
+            this.mBuffer = in.createByteArray();
         }
 
         if ((serializeFlags & SERIALIZE_EXTRA_BUFFER) != 0) {
-            extraBuffers = new ArrayList<>();
             int size = in.readInt();
             for (int i = 0; i < size; ++i) {
-                extraBuffers.add(in.createByteArray());
+                String key = in.readString();
+                mExtraBuffers.put(key, in.createByteArray());
             }
         }
 
         if ((serializeFlags & SERIALIZE_EXTRA_PARCERCELABLE) != 0) {
-            extraParcelable = new ArrayList<>();
             int size = in.readInt();
             for (int i = 0; i < size; ++i) {
+                String key = in.readString();
                 ParcelablePayload pp = ParcelablePayload.CREATOR.createFromParcel(in);
-                extraParcelable.add(pp);
+                mExtraParcelable.put(key, pp);
             }
         }
 
