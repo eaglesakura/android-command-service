@@ -16,23 +16,39 @@ import java.util.List;
 import java.util.Map;
 
 public class CommandServer {
-    private final Service service;
+    protected final Service mService;
 
-    private final ICommandServerService impl;
+    private final ICommandServerService mImpl;
 
-    private Map<String, ServiceClient> clients = new HashMap<>();
+    private Map<String, ServiceClient> mClients = new HashMap<>();
 
     public CommandServer(Service service) {
-        this.service = service;
-        this.impl = new ServerImpl();
+        this.mService = service;
+        this.mImpl = new ServerImpl();
+    }
+
+    /**
+     * 接続されているServiceを取得する
+     */
+    public Service getService() {
+        return mService;
+    }
+
+    /**
+     * 接続されているクライアント数を取得する
+     */
+    public int getClientNum() {
+        synchronized (mClients) {
+            return mClients.size();
+        }
     }
 
     /**
      * Serviceの実体を返す
      */
     public IBinder getBinder() {
-        if (impl instanceof ICommandServerService.Stub) {
-            return (ICommandServerService.Stub) impl;
+        if (mImpl instanceof ICommandServerService.Stub) {
+            return (ICommandServerService.Stub) mImpl;
         } else {
             return null;
         }
@@ -43,8 +59,8 @@ public class CommandServer {
      * 指定したクライアントに接続されていればtrue
      */
     public boolean hasClient(String id) {
-        synchronized (clients) {
-            return clients.containsKey(id);
+        synchronized (mClients) {
+            return mClients.containsKey(id);
         }
     }
 
@@ -57,9 +73,9 @@ public class CommandServer {
 
         @Override
         public void registerCallback(final String id, final ICommandClientCallback callback) throws RemoteException {
-            synchronized (clients) {
+            synchronized (mClients) {
                 ServiceClient client = new ServiceClient(id, callback);
-                clients.put(id, client);
+                mClients.put(id, client);
             }
 
             UIHandler.postUI(new Runnable() {
@@ -73,8 +89,8 @@ public class CommandServer {
         @Override
         public void unregisterCallback(ICommandClientCallback callback) throws RemoteException {
             final List<String> idList = new ArrayList<>();
-            synchronized (clients) {
-                Iterator<Map.Entry<String, ServiceClient>> iterator = clients.entrySet().iterator();
+            synchronized (mClients) {
+                Iterator<Map.Entry<String, ServiceClient>> iterator = mClients.entrySet().iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<String, ServiceClient> item = iterator.next();
                     if (callback == item.getValue().callback) {
@@ -126,8 +142,8 @@ public class CommandServer {
      */
     protected Payload postToClient(String clientId, String cmd, Payload payload) throws RemoteException {
         ServiceClient client;
-        synchronized (clients) {
-            client = clients.get(clientId);
+        synchronized (mClients) {
+            client = mClients.get(clientId);
         }
 
         if (client != null) {
@@ -153,8 +169,8 @@ public class CommandServer {
     protected void broadcastToClientNoResults(String cmd, Payload payload) throws RemoteException {
         Map<String, ServiceClient> clients;
 
-        synchronized (this.clients) {
-            clients = new HashMap<>(this.clients);
+        synchronized (this.mClients) {
+            clients = new HashMap<>(this.mClients);
         }
 
         Iterator<Map.Entry<String, ServiceClient>> iterator = clients.entrySet().iterator();
@@ -178,8 +194,8 @@ public class CommandServer {
     protected void broadcastToClient(String cmd, Payload payload, ClientResultCallback callback) throws RemoteException {
         Map<String, ServiceClient> clients;
 
-        synchronized (this.clients) {
-            clients = new HashMap<>(this.clients);
+        synchronized (this.mClients) {
+            clients = new HashMap<>(this.mClients);
         }
 
         Iterator<Map.Entry<String, ServiceClient>> iterator = clients.entrySet().iterator();
@@ -204,8 +220,8 @@ public class CommandServer {
     protected Map<String, Payload> broadcastToClient(String cmd, Payload payload) throws RemoteException {
         Map<String, ServiceClient> clients;
 
-        synchronized (this.clients) {
-            clients = new HashMap<>(this.clients);
+        synchronized (this.mClients) {
+            clients = new HashMap<>(this.mClients);
         }
 
         Map<String, Payload> results = new HashMap<>();
