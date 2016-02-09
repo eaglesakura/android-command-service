@@ -40,6 +40,12 @@ public final class Payload implements Parcelable {
         }
     }
 
+    public Payload(String data) {
+        if (data != null) {
+            this.mBuffer = data.getBytes();
+        }
+    }
+
     public byte[] getBuffer() {
         return mBuffer;
     }
@@ -71,6 +77,13 @@ public final class Payload implements Parcelable {
     @Override
     public int describeContents() {
         return 0;
+    }
+
+    public static String deserializeStringOrNull(Payload payload) {
+        if (payload != null) {
+            return new String(payload.getBuffer());
+        }
+        return null;
     }
 
     public <T extends BaseProperties> T deserializePropOrNull(Class<T> clazz) {
