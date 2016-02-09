@@ -19,14 +19,14 @@ import android.os.RemoteException;
  * 別プロセスServiceと通信するためのインターフェース
  */
 public abstract class CommandClient {
-    protected final Context context;
+    protected final Context mContext;
 
     private ICommandServerService server;
 
     private final String id;
 
     public CommandClient(Context context) {
-        this.context = context.getApplicationContext();
+        this.mContext = context.getApplicationContext();
         this.id = context.getPackageName() + "@" + getClass().getName();
     }
 
@@ -45,7 +45,7 @@ public abstract class CommandClient {
         } else {
             uid = getClass().getName();
         }
-        this.context = context.getApplicationContext();
+        this.mContext = context.getApplicationContext();
         this.id = context.getPackageName() + "@" + uid;
     }
 
@@ -67,7 +67,7 @@ public abstract class CommandClient {
             return;
         }
 
-        context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
+        mContext.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
     /**
@@ -87,7 +87,7 @@ public abstract class CommandClient {
             LogUtil.log(e);
         }
 
-        context.unbindService(connection);
+        mContext.unbindService(connection);
         server = null;
         onDisconnected();
     }
