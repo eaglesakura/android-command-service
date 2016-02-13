@@ -26,6 +26,7 @@ deployment:
       - rm -rf "/home/ubuntu/.ivy2"
       - rm -rf "/home/ubuntu/.gradle"
       - git clone git@github.com:eaglesakura/maven.git
+      - ./script/test.sh
       - ./script/deploy.sh
       - ./script/circle-maven-commit.sh
   develop:
@@ -34,4 +35,5 @@ deployment:
       - rm -rf "/home/ubuntu/.m2"
       - rm -rf "/home/ubuntu/.ivy2"
       - rm -rf "/home/ubuntu/.gradle"
+      - ./script/test.sh
       - ./script/deploy.sh
