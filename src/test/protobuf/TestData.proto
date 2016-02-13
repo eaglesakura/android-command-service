@@ -1,0 +1,11 @@
+package eaglesakura_ace_internal;
+option java_package = "com.eaglesakura.android.service.dummy";
+
+message SimpleMessage {
+    optional int32 intValue = 1;
+    optional int64 longValue = 2;
+    optional string stringValue = 3;
+    optional float floatValue = 4;
+    optional double doubleValue = 5;
+    optional bool boolValue = 6;
+}

@@ -1,11 +1,14 @@
 package com.eaglesakura.android.service.data;
 
+import com.google.protobuf.GeneratedMessage;
+
 import com.eaglesakura.android.db.BaseProperties;
 import com.eaglesakura.util.Util;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -43,6 +46,12 @@ public final class Payload implements Parcelable {
     public Payload(String data) {
         if (data != null) {
             this.mBuffer = data.getBytes();
+        }
+    }
+
+    public Payload(GeneratedMessage msg) {
+        if (msg != null) {
+            this.mBuffer = msg.toByteArray();
         }
     }
 
@@ -85,6 +94,40 @@ public final class Payload implements Parcelable {
         }
         return null;
     }
+
+    /**
+     * Protocol Buffersのメッセージに変換する
+     */
+    public <T extends GeneratedMessage> T deserializeMessageOrNull(Class<T> clazz) {
+        return deserializeMessageOrNull(clazz, mBuffer);
+    }
+
+    /**
+     * Protocol Buffersのメッセージに変換する
+     */
+    public static <T extends GeneratedMessage> T deserializeMessageOrNull(Payload payload, Class<T> clazz) {
+        if (payload != null) {
+            return payload.deserializeMessageOrNull(clazz);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Protocol Buffersのメッセージに変換する
+     */
+    public static <T extends GeneratedMessage> T deserializeMessageOrNull(Class<T> clazz, byte[] protobufMsg) {
+        try {
+            if (Util.isEmpty(protobufMsg)) {
+                return null;
+            }
+            Method parseFrom = clazz.getMethod("parseFrom", byte[].class);
+            return (T) parseFrom.invoke(clazz, protobufMsg);
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
 
     public <T extends BaseProperties> T deserializePropOrNull(Class<T> clazz) {
         try {

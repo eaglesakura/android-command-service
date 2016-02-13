@@ -48,9 +48,16 @@ dependencies {
         compile project(':eglibrary:android-text-kvs')
         compile project(':eglibrary:android-thread')
     } else {
-        compile 'com.eaglesakura:android-text-kvs:1.0.+'
-        compile 'com.eaglesakura:android-thread:1.0.+'
+        compile 'com.eaglesakura:android-text-kvs:1.+'
+        compile 'com.eaglesakura:android-thread:1.+'
     }
+    compile "com.google.protobuf:protobuf-java:2.6.1"
+
+    /**
+     * Unit Testing
+     */
+    testCompile 'junit:junit:4.12'
+    testCompile "org.robolectric:robolectric:3.0"
 }
 
 apply plugin: 'maven'
