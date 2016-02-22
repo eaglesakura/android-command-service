@@ -46,9 +46,11 @@ if (!hasProperty("EGLIBRARY_COMPILE_LOCAL")) {
 dependencies {
     if (EGLIBRARY_COMPILE_LOCAL) {
         compile project(':eglibrary:android-text-kvs')
+        compile project(':eglibrary:simple-serialize')
         compile project(':eglibrary:android-thread')
     } else {
         compile 'com.eaglesakura:android-text-kvs:1.+'
+        compile 'com.eaglesakura:simple-serialize:1.+'
         compile 'com.eaglesakura:android-thread:1.+'
     }
     compile "com.google.protobuf:protobuf-java:2.6.1"
