@@ -3,6 +3,10 @@ package com.eaglesakura.android.service.data;
 import com.google.protobuf.GeneratedMessage;
 
 import com.eaglesakura.android.db.BaseProperties;
+import com.eaglesakura.serialize.PublicFieldDeserializer;
+import com.eaglesakura.serialize.PublicFieldSerializer;
+import com.eaglesakura.serialize.error.SerializeException;
+import com.eaglesakura.util.LogUtil;
 import com.eaglesakura.util.Util;
 
 import android.os.Parcel;
@@ -36,6 +40,18 @@ public final class Payload implements Parcelable {
     private static final int SERIALIZE_MAIN_BUFFER = 0x01 << 0;
     private static final int SERIALIZE_EXTRA_BUFFER = 0x01 << 1;
     private static final int SERIALIZE_EXTRA_PARCERCELABLE = 0x01 << 2;
+
+    /**
+     * Public Field Objectからシリアライズする
+     */
+    public static Payload fromPublicField(Object obj) {
+        try {
+            return new Payload(new PublicFieldSerializer().serialize(obj));
+        } catch (SerializeException e) {
+            LogUtil.log(e);
+            throw new IllegalArgumentException();
+        }
+    }
 
     public Payload(byte[] buffer) {
         if (buffer != null) {
@@ -93,6 +109,26 @@ public final class Payload implements Parcelable {
             return new String(payload.getBuffer());
         }
         return null;
+    }
+
+    /**
+     * Public Field構成された
+     */
+    public <T> T deserializePublicField(Class<T> clazz) throws SerializeException {
+        return new PublicFieldDeserializer().deserialize(clazz, mBuffer);
+    }
+
+    public static <T> T deserializePublicFieldOrNull(Payload payload, Class<T> clazz) {
+        try {
+            if (payload == null) {
+                return null;
+            } else {
+                return payload.deserializePublicField(clazz);
+            }
+        } catch (SerializeException e) {
+            LogUtil.log(e);
+            throw new IllegalArgumentException();
+        }
     }
 
     /**
