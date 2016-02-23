@@ -53,7 +53,7 @@ dependencies {
         compile 'com.eaglesakura:simple-serialize:1.+'
         compile 'com.eaglesakura:android-thread:1.+'
     }
-    compile "com.google.protobuf:protobuf-java:2.6.1"
+    provided "com.google.protobuf:protobuf-java:2.6.1"
 
     /**
      * Unit Testing
