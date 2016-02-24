@@ -46,28 +46,42 @@ public final class Payload implements Parcelable {
      */
     public static Payload fromPublicField(Object obj) {
         try {
-            return new Payload(new PublicFieldSerializer().serialize(obj));
+            if (obj != null) {
+                return new Payload(new PublicFieldSerializer().serialize(obj));
+            } else {
+                return new Payload((byte[]) null);
+            }
         } catch (SerializeException e) {
             LogUtil.log(e);
             throw new IllegalArgumentException();
         }
     }
 
+    /**
+     * Protocol Buffersを用いて生成する
+     */
+    public static Payload fromProtobuf(GeneratedMessage msg) {
+        if (msg != null) {
+            return new Payload(msg.toByteArray());
+        } else {
+            return new Payload((byte[]) null);
+        }
+    }
+
+    /**
+     * 文字列から生成する
+     */
+    public static Payload fromString(String str) {
+        if (str != null) {
+            return new Payload(str.getBytes());
+        } else {
+            return new Payload((byte[]) null);
+        }
+    }
+
     public Payload(byte[] buffer) {
         if (buffer != null) {
             this.mBuffer = buffer;
-        }
-    }
-
-    public Payload(String data) {
-        if (data != null) {
-            this.mBuffer = data.getBytes();
-        }
-    }
-
-    public Payload(GeneratedMessage msg) {
-        if (msg != null) {
-            this.mBuffer = msg.toByteArray();
         }
     }
 
