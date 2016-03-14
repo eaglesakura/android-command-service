@@ -6,6 +6,7 @@ import com.eaglesakura.android.db.BaseProperties;
 import com.eaglesakura.serialize.PublicFieldDeserializer;
 import com.eaglesakura.serialize.PublicFieldSerializer;
 import com.eaglesakura.serialize.error.SerializeException;
+import com.eaglesakura.util.CollectionUtil;
 import com.eaglesakura.util.LogUtil;
 import com.eaglesakura.util.Util;
 
@@ -168,7 +169,7 @@ public final class Payload implements Parcelable {
      */
     public static <T extends GeneratedMessage> T deserializeMessageOrNull(Class<T> clazz, byte[] protobufMsg) {
         try {
-            if (Util.isEmpty(protobufMsg)) {
+            if (CollectionUtil.isEmpty(protobufMsg)) {
                 return null;
             }
             Method parseFrom = clazz.getMethod("parseFrom", byte[].class);
@@ -181,7 +182,7 @@ public final class Payload implements Parcelable {
 
     public <T extends BaseProperties> T deserializePropOrNull(Class<T> clazz) {
         try {
-            if (Util.isEmpty(mBuffer)) {
+            if (CollectionUtil.isEmpty(mBuffer)) {
                 return null;
             }
 
@@ -205,7 +206,7 @@ public final class Payload implements Parcelable {
 
         // シリアライズフラグを指定する
         {
-            if (!Util.isEmpty(mBuffer)) {
+            if (!CollectionUtil.isEmpty(mBuffer)) {
                 serializeFlags |= SERIALIZE_MAIN_BUFFER;
             }
             if (!mExtraBuffers.isEmpty()) {
