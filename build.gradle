@@ -50,18 +50,16 @@ dependencies {
         compile project(':eglibrary:android-text-kvs')
         compile project(':eglibrary:simple-serialize')
         compile project(':eglibrary:android-thread')
+
+        testCompile project(":eglibrary:android-unittest-support")
     } else {
         compile 'com.eaglesakura:android-text-kvs:1.+'
         compile 'com.eaglesakura:simple-serialize:1.+'
         compile 'com.eaglesakura:android-thread:1.+'
+
+        testCompile 'com.eaglesakura:android-unittest-support:1.+'
     }
     provided "com.google.protobuf:protobuf-java:2.6.1"
-
-    /**
-     * Unit Testing
-     */
-    testCompile 'junit:junit:4.12'
-    testCompile "org.robolectric:robolectric:3.0"
 }
 
 apply plugin: 'maven'

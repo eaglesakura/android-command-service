@@ -1,13 +1,13 @@
 package com.eaglesakura.android.service.data;
 
-import com.eaglesakura.android.service.CiJUnitTester;
+import com.eaglesakura.android.service.UnitTestCase;
 import com.eaglesakura.android.service.dummy.TestData;
 
 import org.junit.Test;
 
 import junit.framework.Assert;
 
-public class PayloadTest extends CiJUnitTester {
+public class PayloadTest extends UnitTestCase {
 
     @Test
     public void Payload2String() {
