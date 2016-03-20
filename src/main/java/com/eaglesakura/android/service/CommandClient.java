@@ -102,7 +102,7 @@ public abstract class CommandClient {
                     try {
                         newServer.registerCallback(id, callback);
                     } catch (RemoteException e) {
-                        throw new IllegalStateException();
+                        throw new IllegalStateException(e);
                     }
 
                     server = newServer;
