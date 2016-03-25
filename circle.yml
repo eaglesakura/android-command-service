@@ -11,7 +11,7 @@ machine:
   java:
     version: oraclejdk8
   environment:
-    ANDROID_HOME: /usr/local/android-sdk-linux
+    ANDROID_HOME: /home/ubuntu/android-sdk
     GRADLE_OPTS: -Xmx4G -Dorg.gradle.daemon=true
     JAVA_OPTS: -Dfile.encoding=UTF-8 -Xms1024m -Xmx4096m -XX:MaxPermSize=2048m
 dependencies:
@@ -30,11 +30,11 @@ deployment:
     branch: /^v[0-9]\..*$/
     commands:
       - git clone git@github.com:eaglesakura/maven.git
-      - ./script/test.sh
+#      - ./script/test.sh
       - ./script/deploy.sh
       - ./script/circle-maven-commit.sh
   develop:
     branch: develop
     commands:
-      - ./script/test.sh
+#      - ./script/test.sh
       - ./script/deploy.sh
