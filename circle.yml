@@ -21,6 +21,7 @@ dependencies:
   override:
     - sh -c "$(curl -fsSL https://raw.githubusercontent.com/eaglesakura/build-dependencies/master/android-sdk-install-circle.sh)"
     - ./script/circleci-invalidate-cache.sh
+    - ./gradlew dependencies
 test:
   override:
     - echo "Skip test task"
