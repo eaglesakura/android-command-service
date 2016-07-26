@@ -4,8 +4,9 @@
  * 1.1.1 : PayloadをKey-Value形式に変更
  * 1.1.2 : アクセサを一部増やした
  * 1.1.x : Circle CIに移行
+ * 1.2.x : KeyValueStoreの依存バージョンを2.x系統に変更
  */
-def ARTIFACT_VERSION = "1.1"
+def ARTIFACT_VERSION = "1.2"
 def ARTIFACT_NAME = file(".").absoluteFile.name
 def ARTIFACT_INSTALL_TARGET = getArtifactInstallTarget()
 
@@ -26,8 +27,8 @@ repositories {
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.1"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7
@@ -36,7 +37,7 @@ android {
 
     defaultConfig {
         minSdkVersion 10
-        targetSdkVersion 23
+        targetSdkVersion 24
     }
 }
 
@@ -53,7 +54,7 @@ dependencies {
 
         testCompile project(":eglibrary:android-unittest-support")
     } else {
-        compile 'com.eaglesakura:android-text-kvs:1.+'
+        compile 'com.eaglesakura:android-text-kvs:2.+'
         compile 'com.eaglesakura:simple-serialize:1.+'
         compile 'com.eaglesakura:android-thread:1.+'
 

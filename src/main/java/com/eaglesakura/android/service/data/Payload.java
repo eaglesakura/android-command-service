@@ -179,6 +179,7 @@ public final class Payload implements Parcelable {
     }
 
 
+    @Deprecated
     public <T extends BaseProperties> T deserializePropOrNull(Class<T> clazz) {
         try {
             if (CollectionUtil.isEmpty(mBuffer)) {
@@ -191,6 +192,7 @@ public final class Payload implements Parcelable {
         return null;
     }
 
+    @Deprecated
     public static <T extends BaseProperties> T deserializePropOrNull(Payload payload, Class<T> clazz) {
         if (payload != null) {
             return payload.deserializePropOrNull(clazz);
