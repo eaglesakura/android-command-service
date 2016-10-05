@@ -5,6 +5,8 @@ import com.eaglesakura.android.service.aidl.ICommandServerService;
 import com.eaglesakura.android.service.data.Payload;
 import com.eaglesakura.android.thread.ui.UIHandler;
 import com.eaglesakura.android.util.AndroidThreadUtil;
+import com.eaglesakura.lambda.CallbackUtils;
+import com.eaglesakura.lambda.CancelCallback;
 import com.eaglesakura.util.StringUtil;
 
 import android.content.ComponentName;
@@ -13,6 +15,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.annotation.WorkerThread;
 
 /**
  * 別プロセスServiceと通信するためのインターフェース
@@ -67,6 +70,37 @@ public abstract class CommandClient {
         }
 
         mContext.bindService(intent, connection, Context.BIND_AUTO_CREATE);
+    }
+
+
+    /**
+     * 接続リクエストを行い、完了するまで待ちを行う
+     * 内部でスピンロックが入るため、バックグラウンドで呼び出すことが前提となる。
+     */
+    @WorkerThread
+    protected boolean connectToSever(final Intent intent, CancelCallback cancelCallback) {
+        if (!UIHandler.postWithWait(new Runnable() {
+            @Override
+            public void run() {
+                connectToSever(intent);
+            }
+        }, cancelCallback)) {
+            // 実行に失敗した
+            return false;
+        }
+
+        while (!isConnected()) {
+            if (CallbackUtils.isCanceled(cancelCallback)) {
+                UIHandler.postUI(new Runnable() {
+                    @Override
+                    public void run() {
+                        disconnect();
+                    }
+                });
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
