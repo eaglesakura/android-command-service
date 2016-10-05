@@ -8,7 +8,6 @@ import com.eaglesakura.serialize.PublicFieldSerializer;
 import com.eaglesakura.serialize.error.SerializeException;
 import com.eaglesakura.util.CollectionUtil;
 import com.eaglesakura.util.LogUtil;
-import com.eaglesakura.util.Util;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -120,7 +119,7 @@ public final class Payload implements Parcelable {
     }
 
     public static String deserializeStringOrNull(Payload payload) {
-        if (payload != null) {
+        if (payload != null && payload.getBuffer() != null) {
             return new String(payload.getBuffer());
         }
         return null;
@@ -180,6 +179,7 @@ public final class Payload implements Parcelable {
     }
 
 
+    @Deprecated
     public <T extends BaseProperties> T deserializePropOrNull(Class<T> clazz) {
         try {
             if (CollectionUtil.isEmpty(mBuffer)) {
@@ -192,6 +192,7 @@ public final class Payload implements Parcelable {
         return null;
     }
 
+    @Deprecated
     public static <T extends BaseProperties> T deserializePropOrNull(Payload payload, Class<T> clazz) {
         if (payload != null) {
             return payload.deserializePropOrNull(clazz);

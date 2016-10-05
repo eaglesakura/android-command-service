@@ -5,7 +5,6 @@ import com.eaglesakura.android.service.aidl.ICommandServerService;
 import com.eaglesakura.android.service.data.Payload;
 import com.eaglesakura.android.thread.ui.UIHandler;
 import com.eaglesakura.android.util.AndroidThreadUtil;
-import com.eaglesakura.util.LogUtil;
 import com.eaglesakura.util.StringUtil;
 
 import android.content.ComponentName;
@@ -84,12 +83,14 @@ public abstract class CommandClient {
         try {
             server.unregisterCallback(callback);
         } catch (Exception e) {
-            LogUtil.log(e);
+            e.printStackTrace();
         }
 
         mContext.unbindService(connection);
         server = null;
-        onDisconnected();
+
+        // 正常な手段で切断した
+        onDisconnected(0x00);
     }
 
     private ServiceConnection connection = new ServiceConnection() {
@@ -102,7 +103,7 @@ public abstract class CommandClient {
                     try {
                         newServer.registerCallback(id, callback);
                     } catch (RemoteException e) {
-                        throw new IllegalStateException();
+                        throw new IllegalStateException(e);
                     }
 
                     server = newServer;
@@ -118,7 +119,7 @@ public abstract class CommandClient {
                 public void run() {
                     if (server != null) {
                         server = null;
-                        onDisconnected();
+                        onDisconnected(FLAG_DISCONNECT_CRASH_SERVER);
                     }
                 }
             });
@@ -163,7 +164,21 @@ public abstract class CommandClient {
     /**
      * サーバーからデータ切断された
      */
+    @Deprecated
     protected void onDisconnected() {
 
+    }
+
+    /**
+     * 接続先のサーバーがクラッシュした
+     */
+    public static final int FLAG_DISCONNECT_CRASH_SERVER = 0x1 << 0;
+
+    /**
+     * サーバークラッシュ等のフラグを得られるようにした。
+     * 互換のため、内部では引数無し版を呼び出す
+     */
+    protected void onDisconnected(int flags) {
+        onDisconnected();
     }
 }
