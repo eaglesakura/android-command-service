@@ -127,6 +127,16 @@ public abstract class CommandClient {
         onDisconnected(0x00);
     }
 
+    @WorkerThread
+    public boolean disconnect(CancelCallback cancelCallback) {
+        return UIHandler.postWithWait(new Runnable() {
+            @Override
+            public void run() {
+                disconnect();
+            }
+        }, cancelCallback);
+    }
+
     private ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, final IBinder service) {
