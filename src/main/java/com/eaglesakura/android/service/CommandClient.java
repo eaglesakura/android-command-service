@@ -5,7 +5,8 @@ import com.eaglesakura.android.service.aidl.ICommandServerService;
 import com.eaglesakura.android.service.data.Payload;
 import com.eaglesakura.android.thread.ui.UIHandler;
 import com.eaglesakura.android.util.AndroidThreadUtil;
-import com.eaglesakura.util.LogUtil;
+import com.eaglesakura.lambda.CallbackUtils;
+import com.eaglesakura.lambda.CancelCallback;
 import com.eaglesakura.util.StringUtil;
 
 import android.content.ComponentName;
@@ -14,6 +15,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.annotation.WorkerThread;
 
 /**
  * 別プロセスServiceと通信するためのインターフェース
@@ -70,6 +72,37 @@ public abstract class CommandClient {
         mContext.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
+
+    /**
+     * 接続リクエストを行い、完了するまで待ちを行う
+     * 内部でスピンロックが入るため、バックグラウンドで呼び出すことが前提となる。
+     */
+    @WorkerThread
+    protected boolean connectToSever(final Intent intent, CancelCallback cancelCallback) {
+        if (!UIHandler.postWithWait(new Runnable() {
+            @Override
+            public void run() {
+                connectToSever(intent);
+            }
+        }, cancelCallback)) {
+            // 実行に失敗した
+            return false;
+        }
+
+        while (!isConnected()) {
+            if (CallbackUtils.isCanceled(cancelCallback)) {
+                UIHandler.postUI(new Runnable() {
+                    @Override
+                    public void run() {
+                        disconnect();
+                    }
+                });
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * 切断リクエストを送る
      */
@@ -84,12 +117,24 @@ public abstract class CommandClient {
         try {
             server.unregisterCallback(callback);
         } catch (Exception e) {
-            LogUtil.log(e);
+            e.printStackTrace();
         }
 
         mContext.unbindService(connection);
         server = null;
-        onDisconnected();
+
+        // 正常な手段で切断した
+        onDisconnected(0x00);
+    }
+
+    @WorkerThread
+    public boolean disconnect(CancelCallback cancelCallback) {
+        return UIHandler.postWithWait(new Runnable() {
+            @Override
+            public void run() {
+                disconnect();
+            }
+        }, cancelCallback);
     }
 
     private ServiceConnection connection = new ServiceConnection() {
@@ -118,7 +163,7 @@ public abstract class CommandClient {
                 public void run() {
                     if (server != null) {
                         server = null;
-                        onDisconnected();
+                        onDisconnected(FLAG_DISCONNECT_CRASH_SERVER);
                     }
                 }
             });
@@ -163,7 +208,21 @@ public abstract class CommandClient {
     /**
      * サーバーからデータ切断された
      */
+    @Deprecated
     protected void onDisconnected() {
 
+    }
+
+    /**
+     * 接続先のサーバーがクラッシュした
+     */
+    public static final int FLAG_DISCONNECT_CRASH_SERVER = 0x1 << 0;
+
+    /**
+     * サーバークラッシュ等のフラグを得られるようにした。
+     * 互換のため、内部では引数無し版を呼び出す
+     */
+    protected void onDisconnected(int flags) {
+        onDisconnected();
     }
 }
