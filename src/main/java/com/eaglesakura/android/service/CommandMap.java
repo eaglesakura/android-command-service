@@ -1,7 +1,6 @@
 package com.eaglesakura.android.service;
 
 import com.eaglesakura.android.service.data.Payload;
-import com.eaglesakura.util.LogUtil;
 
 import android.os.RemoteException;
 
@@ -37,7 +36,7 @@ public class CommandMap {
         } catch (RemoteException e) {
             throw e;
         } catch (Exception e) {
-            LogUtil.log(e);
+            e.printStackTrace();
             throw new RemoteException();
         }
     }
