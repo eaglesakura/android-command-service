@@ -3,7 +3,7 @@ package com.eaglesakura.android.service;
 import com.eaglesakura.android.service.aidl.ICommandClientCallback;
 import com.eaglesakura.android.service.aidl.ICommandServerService;
 import com.eaglesakura.android.service.data.Payload;
-import com.eaglesakura.android.thread.ui.UIHandler;
+import com.eaglesakura.android.thread.UIHandler;
 
 import android.app.Service;
 import android.os.IBinder;
