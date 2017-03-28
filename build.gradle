@@ -7,7 +7,7 @@
  * 1.2.x  : KeyValueStoreの依存バージョンを2.x系統に変更
  * 1.3.x  : bintrayに移行
  */
-def ARTIFACT_VERSION = "1.2"
+def ARTIFACT_VERSION = "1.3"
 def REPOSITORY_NAME = "maven"
 def BINTRAY_LICENSES = ["MIT"]
 def BINTRAY_LABELS = ["android"]
@@ -56,15 +56,12 @@ if (!hasProperty("EGLIBRARY_COMPILE_LOCAL")) {
 
 dependencies {
     if (EGLIBRARY_COMPILE_LOCAL) {
-        compile project(':eglibrary:android-text-kvs')
-
+        compile project(':eglibrary:android-commons')
         testCompile project(":eglibrary:android-unittest-support")
     } else {
-        compile "com.eaglesakura:android-text-kvs:2.1.447"
-
-        testCompile "com.eaglesakura:android-unittest-support:1.4.206"
+        compile "com.eaglesakura:android-commons:2.1.3"
+        testCompile "com.eaglesakura:android-unittest-support:1.4.207"
     }
-    provided "com.google.protobuf:protobuf-java:2.6.1"
 }
 
 task sourcesJar(type: Jar) {

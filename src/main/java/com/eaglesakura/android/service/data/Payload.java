@@ -1,18 +1,10 @@
 package com.eaglesakura.android.service.data;
 
-import com.google.protobuf.GeneratedMessage;
-
-import com.eaglesakura.android.db.BaseProperties;
-import com.eaglesakura.serialize.PublicFieldDeserializer;
-import com.eaglesakura.serialize.PublicFieldSerializer;
-import com.eaglesakura.serialize.error.SerializeException;
 import com.eaglesakura.util.CollectionUtil;
-import com.eaglesakura.util.LogUtil;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,33 +32,6 @@ public final class Payload implements Parcelable {
     private static final int SERIALIZE_MAIN_BUFFER = 0x01 << 0;
     private static final int SERIALIZE_EXTRA_BUFFER = 0x01 << 1;
     private static final int SERIALIZE_EXTRA_PARCERCELABLE = 0x01 << 2;
-
-    /**
-     * Public Field Objectからシリアライズする
-     */
-    public static Payload fromPublicField(Object obj) {
-        try {
-            if (obj != null) {
-                return new Payload(new PublicFieldSerializer().serialize(obj));
-            } else {
-                return new Payload((byte[]) null);
-            }
-        } catch (SerializeException e) {
-            LogUtil.log(e);
-            throw new IllegalArgumentException();
-        }
-    }
-
-    /**
-     * Protocol Buffersを用いて生成する
-     */
-    public static Payload fromProtobuf(GeneratedMessage msg) {
-        if (msg != null) {
-            return new Payload(msg.toByteArray());
-        } else {
-            return new Payload((byte[]) null);
-        }
-    }
 
     /**
      * 文字列から生成する
@@ -103,7 +68,7 @@ public final class Payload implements Parcelable {
         return mExtraBuffers.get(key);
     }
 
-    public <T extends Parcelable> T getParcerable(String key) {
+    public <T extends Parcelable> T getParcelable(String key) {
         ParcelablePayload payload = mExtraParcelable.get(key);
         if (payload == null) {
             return null;
@@ -123,82 +88,6 @@ public final class Payload implements Parcelable {
             return new String(payload.getBuffer());
         }
         return null;
-    }
-
-    /**
-     * Public Field構成された
-     */
-    public <T> T deserializePublicField(Class<T> clazz) throws SerializeException {
-        return new PublicFieldDeserializer().deserialize(clazz, mBuffer);
-    }
-
-    public static <T> T deserializePublicFieldOrNull(Payload payload, Class<T> clazz) {
-        try {
-            if (payload == null) {
-                return null;
-            } else {
-                return payload.deserializePublicField(clazz);
-            }
-        } catch (SerializeException e) {
-            LogUtil.log(e);
-            throw new IllegalArgumentException();
-        }
-    }
-
-    /**
-     * Protocol Buffersのメッセージに変換する
-     */
-    public <T extends GeneratedMessage> T deserializeMessageOrNull(Class<T> clazz) {
-        return deserializeMessageOrNull(clazz, mBuffer);
-    }
-
-    /**
-     * Protocol Buffersのメッセージに変換する
-     */
-    public static <T extends GeneratedMessage> T deserializeMessageOrNull(Payload payload, Class<T> clazz) {
-        if (payload != null) {
-            return payload.deserializeMessageOrNull(clazz);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Protocol Buffersのメッセージに変換する
-     */
-    public static <T extends GeneratedMessage> T deserializeMessageOrNull(Class<T> clazz, byte[] protobufMsg) {
-        try {
-            if (CollectionUtil.isEmpty(protobufMsg)) {
-                return null;
-            }
-            Method parseFrom = clazz.getMethod("parseFrom", byte[].class);
-            return (T) parseFrom.invoke(clazz, protobufMsg);
-        } catch (Exception e) {
-        }
-        return null;
-    }
-
-
-    @Deprecated
-    public <T extends BaseProperties> T deserializePropOrNull(Class<T> clazz) {
-        try {
-            if (CollectionUtil.isEmpty(mBuffer)) {
-                return null;
-            }
-
-            return BaseProperties.deserializeInstance(null, clazz, mBuffer);
-        } catch (Exception e) {
-        }
-        return null;
-    }
-
-    @Deprecated
-    public static <T extends BaseProperties> T deserializePropOrNull(Payload payload, Class<T> clazz) {
-        if (payload != null) {
-            return payload.deserializePropOrNull(clazz);
-        } else {
-            return null;
-        }
     }
 
     @Override

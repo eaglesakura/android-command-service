@@ -1,7 +1,6 @@
 package com.eaglesakura.android.service.data;
 
 import com.eaglesakura.android.service.UnitTestCase;
-import com.eaglesakura.android.service.dummy.TestData;
 
 import org.junit.Test;
 
@@ -18,13 +17,4 @@ public class PayloadTest extends UnitTestCase {
         Assert.assertEquals(TEST_STRING, deserialized);
     }
 
-    @Test
-    public void Payload2Protobuf() {
-        TestData.SimpleMessage.Builder builder = TestData.SimpleMessage.newBuilder();
-        builder.setStringValue("this is test value");
-
-        Payload payload = Payload.fromProtobuf(builder.build());
-        TestData.SimpleMessage msg = Payload.deserializeMessageOrNull(payload, TestData.SimpleMessage.class);
-        Assert.assertNotNull(msg.getStringValue(), builder.getStringValue());
-    }
 }
